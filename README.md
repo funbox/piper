@@ -1,4 +1,4 @@
-<p align="center"><a href="#piper">Piper</a> • <a href="#purpose">Purpose</a> • <a href="#examples">Examples</a> • <a href="#usage">Usage</a> • <a href="#license">License</a></p>
+<p align="center"><a href="#piper">Piper</a> • <a href="#purpose">Purpose</a> • <a href="#installation">Installation</a> • <a href="#getting-started">Getting started</a> • <a href="#usage">Usage</a> • <a href="#license">License</a></p>
 
 # Piper [![Go Report Card](https://goreportcard.com/badge/github.com/gongled/piper)](https://goreportcard.com/report/github.com/gongled/piper)
 
