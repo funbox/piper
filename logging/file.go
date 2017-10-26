@@ -63,7 +63,7 @@ func Reopen() error {
 
 // ////////////////////////////////////////////////////////////////////////////////// //
 
-// New creates new FileHandler struct
+// Set sets initial parameters for logging
 func (h *FileHandler) Set(path string, perms os.FileMode) error {
 	fp, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_RDWR, perms)
 
