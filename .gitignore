@@ -1,0 +1,4 @@
+.idea
+*.tar.gz
+*.tar.bz2
+*.rpm
