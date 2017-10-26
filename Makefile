@@ -9,10 +9,10 @@
 
 ########################################################################################
 
-all: main
+all: piper
 
-main:
-	go build main.go
+piper:
+	go build piper.go
 
 deps:
 	git config --global http.https://pkg.re.followRedirects true
@@ -22,6 +22,6 @@ fmt:
 	find . -name "*.go" -exec gofmt -s -w {} \;
 
 clean:
-	rm -f main
+	rm -f piper
 
 ########################################################################################
