@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gongled/piper/logging"
 
@@ -26,18 +27,22 @@ const (
 
 // Options
 const (
-	OPT_NO_COLOR = "nc:no-color"
-	OPT_HELP     = "h:help"
-	OPT_VERSION  = "v:version"
+	OPT_TIMESTAMP = "t:timestamp"
+	OPT_NO_COLOR  = "nc:no-color"
+	OPT_HELP      = "h:help"
+	OPT_VERSION   = "v:version"
 )
+
+const TS_PIPER_FORMAT = "02/Jan/2006:15:04:05.999999 -07:00"
 
 // ////////////////////////////////////////////////////////////////////////////////// //
 
 // Options map
 var optMap = options.Map{
-	OPT_NO_COLOR: {Type: options.BOOL},
-	OPT_HELP:     {Type: options.BOOL, Alias: "u:usage"},
-	OPT_VERSION:  {Type: options.BOOL, Alias: "ver"},
+	OPT_TIMESTAMP: {Type: options.BOOL},
+	OPT_NO_COLOR:  {Type: options.BOOL},
+	OPT_HELP:      {Type: options.BOOL, Alias: "u:usage"},
+	OPT_VERSION:   {Type: options.BOOL, Alias: "ver"},
 }
 
 // ////////////////////////////////////////////////////////////////////////////////// //
@@ -77,15 +82,6 @@ func Init() {
 
 // ////////////////////////////////////////////////////////////////////////////////// //
 
-// registerSignalHandlers registers handlers for signals
-func registerSignalHandlers() {
-	signal.Handlers{
-		signal.TERM: termSignalHandler,
-		signal.INT:  intSignalHandler,
-		signal.USR1: usr1SignalHandler,
-	}.TrackAsync()
-}
-
 // intSignalHandler handles SIGINT signal and stops the program
 func intSignalHandler() {
 	piper.Close()
@@ -103,6 +99,24 @@ func usr1SignalHandler() {
 	piper.Reopen()
 }
 
+// ////////////////////////////////////////////////////////////////////////////////// //
+
+// timeNow returns string of current datetime
+func timeNow() string {
+	return time.Now().Format(TS_PIPER_FORMAT)
+}
+
+// ////////////////////////////////////////////////////////////////////////////////// //
+
+// registerSignalHandlers registers handlers for signals
+func registerSignalHandlers() {
+	signal.Handlers{
+		signal.TERM: termSignalHandler,
+		signal.INT:  intSignalHandler,
+		signal.USR1: usr1SignalHandler,
+	}.TrackAsync()
+}
+
 // setupPiperOutput sets up logging file parameters
 func setupPiperOutput(logFile string) {
 	err := piper.Set(logFile, 0644)
@@ -117,15 +131,24 @@ func runPiper() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-		piper.Write(scanner.Bytes())
-		piper.Write([]byte{'\n'})
+		line := scanner.Text()
+
+		if options.GetB(OPT_TIMESTAMP) {
+			line = fmt.Sprintf("[%s] %s", timeNow(), line)
+		}
+
+		line = fmt.Sprintln(line)
+
+		fmt.Print(line)
+		piper.Write([]byte(line))
 	}
 
 	if err := scanner.Err(); err != nil {
 		printErrorMessageAndExit(err.Error())
 	}
 }
+
+// ////////////////////////////////////////////////////////////////////////////////// //
 
 // Process arguments
 func process(logFile string) {
@@ -151,6 +174,7 @@ func printErrorMessageAndExit(args ...interface{}) {
 func showUsage() {
 	info := usage.NewInfo(APP, "path")
 
+	info.AddOption(OPT_TIMESTAMP, "Prepend timestamp to every entry")
 	info.AddOption(OPT_NO_COLOR, "Disable colored output")
 	info.AddOption(OPT_VERSION, "Show information about version")
 	info.AddOption(OPT_HELP, "Show this help message")
