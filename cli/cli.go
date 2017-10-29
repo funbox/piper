@@ -118,7 +118,8 @@ func runPiper() {
 
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
-		piper.Write([]byte(fmt.Sprintln(scanner.Text())))
+		piper.Write(scanner.Bytes())
+		piper.Write([]byte{'\n'})
 	}
 
 	if err := scanner.Err(); err != nil {
