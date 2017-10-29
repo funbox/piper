@@ -158,24 +158,3 @@ func (h *FileHandler) Reopen() error {
 
 	return h.Set(h.path, h.mode)
 }
-
-// Rename renames path
-//func (h *FileHandler) Rename(newPath string) error {
-//	if h == nil {
-//		return ErrFileHandlerIsNil
-//	}
-//
-//	if h.fd == nil {
-//		return ErrOutputNotSet
-//	}
-//
-//	err := os.Rename(h.path, newPath)
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	h.path = newPath
-//
-//	return h.Set(newPath, h.mode)
-//}
