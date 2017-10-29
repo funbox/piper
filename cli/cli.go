@@ -168,10 +168,7 @@ func writeLog(line string) {
 // runPiper starts reading stream from stdin and writing to log
 func runPiper() error {
 	scanner := bufio.NewScanner(os.Stdin)
-
 	sizeLimit := getSizeLimit()
-
-	fmt.Printf("DEBUG: size-limit=%v timestamp=%t\n", sizeLimit, options.GetB(OPT_TIMESTAMP))
 
 	for scanner.Scan() {
 		line := scanner.Text()
