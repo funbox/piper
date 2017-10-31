@@ -1,4 +1,4 @@
-package piper
+package handler
 
 import (
 	"errors"
@@ -30,19 +30,19 @@ var Global = &FileHandler{}
 
 // New creates new FileHandler struct
 func New(path string, mode os.FileMode) (*FileHandler, error) {
-	handler := &FileHandler{
+	h := &FileHandler{
 		path: path,
 		mode: mode,
 		size: 0,
 	}
 
-	err := handler.Set(path, mode)
+	err := h.Set(path, mode)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return handler, nil
+	return h, nil
 }
 
 // Path
@@ -75,15 +75,15 @@ func Write(p []byte) (n int, err error) {
 	return Global.Write(p)
 }
 
+//
+func Truncate() error {
+	return Global.Truncate()
+}
+
 // Reopen tries to reopen log file (useful for rotating)
 func Reopen() error {
 	return Global.Reopen()
 }
-
-// Rename renames path
-//func Rename(newPath string) error {
-//	return Global.Rename(newPath)
-//}
 
 // ////////////////////////////////////////////////////////////////////////////////// //
 
@@ -142,6 +142,20 @@ func (h *FileHandler) Write(p []byte) (int, error) {
 	}
 
 	return n, err
+}
+
+//
+func (h *FileHandler) Truncate() error {
+	if h == nil {
+		return ErrFileHandlerIsNil
+	}
+
+	if h.fd == nil {
+		return ErrOutputNotSet
+	}
+
+	// TODO: truncate file
+	return os.Remove(h.Path())
 }
 
 // Reopen tries to reopen log file (useful for rotating)

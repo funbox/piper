@@ -4,12 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/gongled/piper/logging"
 
 	"pkg.re/essentialkaos/ek.v9/fmtc"
-	"pkg.re/essentialkaos/ek.v9/fmtutil"
 	"pkg.re/essentialkaos/ek.v9/options"
 	"pkg.re/essentialkaos/ek.v9/signal"
 	"pkg.re/essentialkaos/ek.v9/usage"
@@ -28,20 +26,22 @@ const (
 
 // Options
 const (
-	OPT_SIZELIMIT = "S:size"
+	OPT_SIZELIMIT = "s:size"
+	OPT_KEEPFILES = "k:keep"
+	OPT_TIMELIMIT = "a:age"
 	OPT_TIMESTAMP = "t:timestamp"
 	OPT_NO_COLOR  = "nc:no-color"
 	OPT_HELP      = "h:help"
 	OPT_VERSION   = "v:version"
 )
 
-const TS_PIPER_FORMAT = "02/Jan/2006:15:04:05.999999 -07:00"
-
 // ////////////////////////////////////////////////////////////////////////////////// //
 
 // Options map
 var optMap = options.Map{
-	OPT_SIZELIMIT: {Type: options.STRING},
+	OPT_SIZELIMIT: {Type: options.STRING, Bound: OPT_KEEPFILES},
+	OPT_KEEPFILES: {Type: options.INT, Value: 0},
+	OPT_TIMELIMIT: {Type: options.STRING, Bound: OPT_KEEPFILES},
 	OPT_TIMESTAMP: {Type: options.BOOL},
 	OPT_NO_COLOR:  {Type: options.BOOL},
 	OPT_HELP:      {Type: options.BOOL, Alias: "u:usage"},
@@ -56,9 +56,8 @@ func Init() {
 
 	if len(errs) != 0 {
 		for _, err := range errs {
-			fmt.Println(err.Error())
+			printErrorMessageAndExit(err.Error())
 		}
-		shutdown()
 	}
 
 	if options.GetB(OPT_NO_COLOR) {
@@ -87,26 +86,19 @@ func Init() {
 
 // intSignalHandler handles SIGINT signal and stops the program
 func intSignalHandler() {
-	piper.Close()
+	log.Close()
 	os.Exit(0)
 }
 
 // termSignalHandler handles SIGTERM signal and stops the program
 func termSignalHandler() {
-	piper.Close()
+	log.Close()
 	os.Exit(0)
 }
 
 // usr1SignalHandler handles SIGUSR1 signal
 func usr1SignalHandler() {
-	piper.Reopen()
-}
-
-// ////////////////////////////////////////////////////////////////////////////////// //
-
-// timeNow returns string of current datetime
-func timeNow() string {
-	return time.Now().Format(TS_PIPER_FORMAT)
+	log.RollOver()
 }
 
 // ////////////////////////////////////////////////////////////////////////////////// //
@@ -121,69 +113,31 @@ func registerSignalHandlers() {
 }
 
 // setupPiperOutput sets up logging file parameters
-func setupPiperOutput(logFile string) {
-	err := piper.Set(logFile, 0644)
+func setUpLogger(logFile string) {
+	err := log.SetUp(logFile)
 
 	if err != nil {
 		printErrorMessageAndExit(err.Error())
 	}
-}
 
-// rotateOutput rotates file
-func rotateOutput() error {
-	fmt.Printf("Rotate file %s\n", piper.Path())
-	piper.Close()
-
-	newPath := fmt.Sprintf("%s.%v", piper.Path(), time.Now().UnixNano())
-
-	if err := os.Rename(piper.Path(), newPath); err != nil {
-		return err
-	}
-
-	return piper.Reopen()
-}
-
-// getSizeLimit provides size in bytes for size-limit log rotation
-func getSizeLimit() uint64 {
-	return fmtutil.ParseSize(options.GetS(OPT_SIZELIMIT))
-}
-
-// checkSizeLimit returns true if is it time to rotate file by size
-func checkSizeLimit(line string, sizeLimit uint64) bool {
-	return (sizeLimit != 0) && (piper.Size()+uint64(len(line)) > sizeLimit)
-}
-
-// prependTimestamp adds timestamp before line
-func prependTimestamp(line string) string {
-	return fmt.Sprintf("[%s] %s", timeNow(), line)
-}
-
-// writeLog writes log entry to file and stdout
-func writeLog(line string) {
-	fmt.Println(line)
-	piper.Write([]byte(line))
-	piper.Write([]byte{'\n'})
+	log.SetMaxFileSize(options.GetS(OPT_SIZELIMIT))
+	log.SetMaxFileAge(options.GetS(OPT_TIMELIMIT))
+	log.SetMaxBackupIndex(options.GetI(OPT_KEEPFILES))
+	log.SetTimestampFlag(options.GetB(OPT_TIMESTAMP))
 }
 
 // runPiper starts reading stream from stdin and writing to log
 func runPiper() error {
 	scanner := bufio.NewScanner(os.Stdin)
-	sizeLimit := getSizeLimit()
 
 	for scanner.Scan() {
-		line := scanner.Text()
+		entry := log.FormatEntry(scanner.Text())
 
-		if options.GetB(OPT_TIMESTAMP) {
-			line = prependTimestamp(line)
+		fmt.Println(entry)
+
+		if err := log.WriteLog(entry); err != nil {
+			return err
 		}
-
-		if checkSizeLimit(line, sizeLimit) {
-			if err := rotateOutput(); err != nil {
-				return err
-			}
-		}
-
-		writeLog(line)
 	}
 
 	return scanner.Err()
@@ -193,7 +147,7 @@ func runPiper() error {
 
 // Process arguments
 func process(logFile string) {
-	setupPiperOutput(logFile)
+	setUpLogger(logFile)
 	registerSignalHandlers()
 
 	if err := runPiper(); err != nil {
@@ -204,14 +158,14 @@ func process(logFile string) {
 // ////////////////////////////////////////////////////////////////////////////////// //
 
 // shutdown finishes program with return-code 1
-func shutdown() {
-	os.Exit(1)
+func shutdown(exitCode int) {
+	os.Exit(exitCode)
 }
 
 // printErrorMessageAndExit finishes program with an error message
 func printErrorMessageAndExit(args ...interface{}) {
 	fmt.Fprintln(os.Stderr, args...)
-	shutdown()
+	shutdown(1)
 }
 
 // Show usage info
@@ -219,13 +173,17 @@ func showUsage() {
 	info := usage.NewInfo(APP, "path")
 
 	info.AddOption(OPT_SIZELIMIT, "Max file size", "size")
+	info.AddOption(OPT_KEEPFILES, "Number of files to keep")
+	info.AddOption(OPT_TIMELIMIT, "Interval of log rotation")
 	info.AddOption(OPT_TIMESTAMP, "Prepend timestamp to every entry")
 	info.AddOption(OPT_NO_COLOR, "Disable colored output")
 	info.AddOption(OPT_VERSION, "Show information about version")
 	info.AddOption(OPT_HELP, "Show this help message")
 
-	info.AddExample("/var/log/program.log", "Read info from stdin and write to logging file")
-	info.AddExample("/var/log/program.log -S 1024kb", "Rotate log every 1024 kilobytes")
+	info.AddExample("/var/log/program.log", "Read stdin and write to log")
+	info.AddExample("-t /var/log/program.log", "Read stdin, prepend timestamp and write to log")
+	info.AddExample("-s 5MB -k 10 /var/log/program.log", "Read stdin and rotate log every 5 megabytes and keep 10 files")
+	info.AddExample("-a 10m -k 5 /var/log/program.log", "Read stdin and rotate log every 10 minute and keep 5 files")
 
 	info.Render()
 }
