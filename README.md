@@ -62,6 +62,10 @@ Usage: piper {options} path
 
 Options
 
+  --size, -s size    Max file size
+  --keep, -k         Number of files to keep
+  --age, -a          Interval of log rotation
+  --timestamp, -t    Prepend timestamp to every entry
   --no-color, -nc    Disable colored output
   --version, -v      Show information about version
   --help, -h         Show this help message
@@ -69,7 +73,16 @@ Options
 Examples
 
   piper /var/log/program.log
-  Read info from the /dev/stdin and write to logging file
+  Read stdin and write to log
+
+  piper -t /var/log/program.log
+  Read stdin, prepend timestamp and write to log
+
+  piper -s 5MB -k 10 /var/log/program.log
+  Read stdin and rotate log every 5 megabytes and keep 10 files
+
+  piper -a 10m -k 5 /var/log/program.log
+  Read stdin and rotate log every 10 minute and keep 5 files
 ```
 
 ## License
