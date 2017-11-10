@@ -175,8 +175,8 @@ func showUsage() {
 	info := usage.NewInfo(APP, "path")
 
 	info.AddOption(OPT_SIZELIMIT, "Max file size", "size")
-	info.AddOption(OPT_KEEPFILES, "Number of files to keep")
-	info.AddOption(OPT_TIMELIMIT, "Interval of log rotation")
+	info.AddOption(OPT_KEEPFILES, "Number of files to keep", "number")
+	info.AddOption(OPT_TIMELIMIT, "Interval of log rotation", "interval")
 	info.AddOption(OPT_TIMESTAMP, "Prepend timestamp to every entry")
 	info.AddOption(OPT_NO_COLOR, "Disable colored output")
 	info.AddOption(OPT_VERSION, "Show information about version")

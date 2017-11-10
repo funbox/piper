@@ -64,13 +64,13 @@ Usage: piper {options} path
 
 Options
 
-  --size, -s size    Max file size
-  --keep, -k         Number of files to keep
-  --age, -a          Interval of log rotation
-  --timestamp, -t    Prepend timestamp to every entry
-  --no-color, -nc    Disable colored output
-  --version, -v      Show information about version
-  --help, -h         Show this help message
+  --size, -s size       Max file size
+  --keep, -k number     Number of files to keep
+  --age, -a interval    Interval of log rotation
+  --timestamp, -t       Prepend timestamp to every entry
+  --no-color, -nc       Disable colored output
+  --version, -v         Show information about version
+  --help, -h            Show this help message
 
 Examples
 
