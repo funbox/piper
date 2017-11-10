@@ -114,16 +114,18 @@ func registerSignalHandlers() {
 
 // setupPiperOutput sets up logging file parameters
 func setUpLogger(logFile string) {
-	err := log.SetUp(logFile)
+	log.SetOutput(logFile)
+
+	log.ParseMaxTimeInterval(options.GetS(OPT_TIMELIMIT))
+	log.ParseMaxFileSize(options.GetS(OPT_SIZELIMIT))
+	log.SetMaxBackupIndex(options.GetI(OPT_KEEPFILES))
+	log.SetTimestampFlag(options.GetB(OPT_TIMESTAMP))
+
+	err := log.Run()
 
 	if err != nil {
 		printErrorMessageAndExit(err.Error())
 	}
-
-	log.SetMaxFileSize(options.GetS(OPT_SIZELIMIT))
-	log.SetMaxFileAge(options.GetS(OPT_TIMELIMIT))
-	log.SetMaxBackupIndex(options.GetI(OPT_KEEPFILES))
-	log.SetTimestampFlag(options.GetB(OPT_TIMESTAMP))
 }
 
 // runPiper starts reading stream from stdin and writing to log

@@ -10,11 +10,12 @@ import (
 
 // FileHandler is logging file struct
 type FileHandler struct {
-	fd    *os.File    // File descriptor of opened file
-	path  string      // Path to file in filesystem
-	mode  os.FileMode // File permission mode
-	size  uint64      // Size in bytes
-	mtime time.Time   // Date modified
+	fd       *os.File    // File descriptor of opened file
+	path     string      // Path to file in filesystem
+	mode     os.FileMode // File permission mode
+	size     uint64      // Size in bytes
+	etime    int64       // Expiration time in seconds
+	duration int64       // Expiration interval
 }
 
 // Error types
@@ -36,7 +37,7 @@ func New(path string, mode os.FileMode) (*FileHandler, error) {
 		size: 0,
 	}
 
-	err := h.Set(path, mode)
+	err := h.Set(path, mode, 0)
 
 	if err != nil {
 		return nil, err
@@ -55,14 +56,14 @@ func Size() uint64 {
 	return Global.Size()
 }
 
-// ModTime returns modified time of the file
-func ModTime() time.Time {
-	return Global.ModTime()
-}
+// ExpirationTime returns modified time of the file
+//func ExpirationTime() int64 {
+//	return Global.ExpirationTime()
+//}
 
 // Set sets initial parameters for logging
-func Set(path string, perms os.FileMode) error {
-	return Global.Set(path, perms)
+func Set(path string, perms os.FileMode, duration int64) error {
+	return Global.Set(path, perms, duration)
 }
 
 // Close closes logging file
@@ -88,17 +89,20 @@ func Reopen() error {
 // ////////////////////////////////////////////////////////////////////////////////// //
 
 // Set sets initial parameters for logging
-func (h *FileHandler) Set(path string, perms os.FileMode) error {
+func (h *FileHandler) Set(path string, perms os.FileMode, duration int64) error {
 	fp, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_RDWR, perms)
 
 	if err == nil {
-		h.fd, h.path, h.mode, h.size, h.mtime = fp, path, perms, 0, time.Now()
+		h.fd, h.path, h.mode, h.size, h.etime, h.duration = fp, path, perms, 0, 0, duration
+
+		if duration > 0 {
+			h.etime = (int64(time.Now().Unix()/duration) + 1) * duration
+		}
 
 		stat, err := fp.Stat()
 
 		if err == nil {
 			h.size = uint64(stat.Size())
-			h.mtime = stat.ModTime()
 		}
 	}
 
@@ -115,9 +119,9 @@ func (h *FileHandler) Size() uint64 {
 	return h.size
 }
 
-// ModTime returns modified time of the file
-func (h *FileHandler) ModTime() time.Time {
-	return h.mtime
+// ExpirationTime returns modified time of the file
+func (h *FileHandler) ExpirationTime() int64 {
+	return h.etime
 }
 
 // Close closes logging file
@@ -170,5 +174,5 @@ func (h *FileHandler) Reopen() error {
 
 	h.fd.Close()
 
-	return h.Set(h.path, h.mode)
+	return h.Set(h.path, h.mode, h.duration)
 }

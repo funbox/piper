@@ -3,11 +3,11 @@ package log
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
-	"path/filepath"
 
 	"pkg.re/essentialkaos/ek.v9/fmtutil"
 
@@ -22,13 +22,12 @@ type FileLogSize uint64
 
 //
 type FileLogger struct {
-	w              handler.FileHandler  //
-	useTimestamp   bool                 //
-	maxFileAge     int64                //
-	maxBackupIndex int                  //
-	maxFileSize    FileLogSize          //
-
-	nextRollOverTime int64              //
+	w               handler.FileHandler //
+	logOutput       string              //
+	useTimestamp    bool                //
+	maxTimeInterval int64               //
+	maxBackupIndex  int                 //
+	maxFileSize     FileLogSize         //
 }
 
 const FILE_LOGGER_FORMAT = "02/Jan/2006:15:04:05"
@@ -84,8 +83,13 @@ func (l FileLogSize) Pretty() string {
 // ////////////////////////////////////////////////////////////////////////////////// //
 
 //
-func SetUp(logFile string) error {
-	return Global.SetUp(logFile)
+func Run() error {
+	return Global.Run()
+}
+
+//
+func SetOutput(logOutput string) {
+	Global.SetOutput(logOutput)
 }
 
 //
@@ -93,18 +97,29 @@ func SetMaxBackupIndex(maxBackupIndex int) {
 	Global.SetMaxBackupIndex(maxBackupIndex)
 }
 
-func SetMaxFileSize(maxFileSize string) {
-	Global.SetMaxFileSize(maxFileSize)
+//
+func ParseMaxTimeInterval(maxTimeInterval string) {
+	Global.ParseMaxTimeInterval(maxTimeInterval)
 }
+
+//
+//func SetMaxTimeInterval(maxTimeInterval int64) {
+//	Global.SetMaxTimeInterval(maxTimeInterval)
+//}
+
+//
+func ParseMaxFileSize(maxFileSize string) {
+	Global.ParseMaxFileSize(maxFileSize)
+}
+
+//
+//func SetMaxFileSize(maxFileSize FileLogSize) {
+//	Global.SetMaxFileSize(maxFileSize)
+//}
 
 //
 func SetTimestampFlag(flag bool) {
 	Global.SetTimestampFlag(flag)
-}
-
-//
-func SetMaxFileAge(maxFileAge string) {
-	Global.SetMaxFileAge(maxFileAge)
 }
 
 //
@@ -130,6 +145,16 @@ func Close() error {
 // ////////////////////////////////////////////////////////////////////////////////// //
 
 //
+func (l *FileLogger) SetOutput(logOutput string) {
+	l.logOutput = logOutput
+}
+
+//
+func (l *FileLogger) GetOutput() string {
+	return l.logOutput
+}
+
+//
 func (l *FileLogger) SetMaxBackupIndex(maxBackupIndex int) {
 	l.maxBackupIndex = maxBackupIndex
 }
@@ -140,8 +165,28 @@ func (l *FileLogger) GetMaxBackupIndex() int {
 }
 
 //
-func (l *FileLogger) SetMaxFileSize(maxFileSize string) {
-	l.maxFileSize = FileLogSize(fmtutil.ParseSize(maxFileSize))
+func (l *FileLogger) ParseMaxTimeInterval(maxTimeInterval string) {
+	l.SetMaxTimeInterval(timeutil.ParseDuration(maxTimeInterval))
+}
+
+//
+func (l *FileLogger) SetMaxTimeInterval(maxTimeInterval int64) {
+	l.maxTimeInterval = maxTimeInterval
+}
+
+//
+func (l *FileLogger) GetMaxTimeInterval() int64 {
+	return l.maxTimeInterval
+}
+
+//
+func (l *FileLogger) ParseMaxFileSize(maxFileSize string) {
+	l.SetMaxFileSize(FileLogSize(fmtutil.ParseSize(maxFileSize)))
+}
+
+//
+func (l *FileLogger) SetMaxFileSize(maxFileSize FileLogSize) {
+	l.maxFileSize = maxFileSize
 }
 
 //
@@ -159,21 +204,15 @@ func (l *FileLogger) GetTimestampFlag() bool {
 	return l.useTimestamp
 }
 
-//
-func (l *FileLogger) SetMaxFileAge(maxFileAge string) {
-	l.maxFileAge = timeutil.ParseDuration(maxFileAge)
-}
-
-//
-func (l *FileLogger) GetMaxFileAge() int64 {
-	return l.maxFileAge
-}
-
 // ////////////////////////////////////////////////////////////////////////////////// //
 
 //
-func (l *FileLogger) SetUp(logFile string) error {
-	return l.w.Set(logFile, 0644)
+func (l *FileLogger) Run() error {
+	if l.logOutput == "" {
+		return fmt.Errorf("log output must be set")
+	}
+
+	return l.w.Set(l.logOutput, 0644, l.maxTimeInterval)
 }
 
 //
@@ -231,9 +270,7 @@ func (l *FileLogger) IsMaxFileSizeReached(entry string) bool {
 
 //
 func (l *FileLogger) IsMaxFileAgeReached() bool {
-	return int64(time.Now().Second()) > l.nextRollOverTime
-
-	// return false
+	return (int64(time.Now().Unix()) > l.w.ExpirationTime()) && (l.w.ExpirationTime() != 0)
 }
 
 // ////////////////////////////////////////////////////////////////////////////////// //
@@ -241,7 +278,6 @@ func (l *FileLogger) IsMaxFileAgeReached() bool {
 //
 func (l *FileLogger) GetRolledOverLogs() []string {
 	globPattern := fmt.Sprintf("%s.*", l.w.Path())
-
 	rolledLogs, err := filepath.Glob(globPattern)
 
 	if err != nil {
@@ -252,24 +288,34 @@ func (l *FileLogger) GetRolledOverLogs() []string {
 }
 
 //
+func (l *FileLogger) RenameLog() error {
+	newPath := fmt.Sprintf("%s.%v", l.w.Path(), time.Now().UnixNano())
+
+	return os.Rename(l.w.Path(), newPath)
+}
+
+//
+func (l *FileLogger) RemoveStaleLogs() {
+	rolledLogs := l.GetRolledOverLogs()
+	sort.Sort(oldestLogFirst(rolledLogs))
+
+	if len(rolledLogs) > l.maxBackupIndex {
+		for _, staleFile := range rolledLogs[:len(rolledLogs)-l.maxBackupIndex] {
+			os.Remove(staleFile)
+		}
+	}
+}
+
+//
 func (l *FileLogger) RollOver() error {
 	l.w.Close()
 
-	newPath := fmt.Sprintf("%s.%v", l.w.Path(), time.Now().UnixNano())
-
-	if err := os.Rename(l.w.Path(), newPath); err != nil {
+	if err := l.RenameLog(); err != nil {
 		return err
 	}
 
-	if l.maxBackupIndex > 0 {
-		rolledLogs := l.GetRolledOverLogs()
-		sort.Sort(oldestLogFirst(rolledLogs))
-
-		if len(rolledLogs) > l.maxBackupIndex {
-			for _, staleFile := range rolledLogs[:len(rolledLogs)-l.maxBackupIndex] {
-				os.Remove(staleFile)
-			}
-		}
+	if l.GetMaxBackupIndex() > 0 || l.GetMaxTimeInterval() > 0 {
+		l.RemoveStaleLogs()
 	}
 
 	return l.w.Reopen()
