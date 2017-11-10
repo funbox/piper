@@ -6,11 +6,13 @@
 
 ## Purpose
 
-`piper` solves three problems of logging design:
+`piper` solves these problems of logging design:
 
 - It supports log rotation by [POSIX signals](https://en.wikipedia.org/wiki/Signal_(IPC)#POSIX_signals), in contrast to similar tools.
 - It rotates logs for apps that do not support log rotation out-of-box.
 - It rotates logs for apps that cannot be stopped for some reasons.
+- It rotates logs for apps by given duration.
+- It rotates logs for apps by given size limit.
 
 ## Installation
 
