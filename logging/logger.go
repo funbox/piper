@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"pkg.re/essentialkaos/ek.v9/fmtutil"
+	"pkg.re/essentialkaos/ek.v9/timeutil"
 
 	"github.com/gongled/piper/handler"
-	"pkg.re/essentialkaos/ek/timeutil"
 )
 
 // ////////////////////////////////////////////////////////////////////////////////// //
