@@ -9,16 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"pkg.re/essentialkaos/ek.v9/fmtutil"
-	"pkg.re/essentialkaos/ek.v9/timeutil"
-
 	"github.com/gongled/piper/handler"
 )
 
 // ////////////////////////////////////////////////////////////////////////////////// //
-
-//
-type FileLogSize uint64
 
 //
 type FileLogger struct {
@@ -27,7 +21,7 @@ type FileLogger struct {
 	useTimestamp    bool                //
 	maxTimeInterval int64               //
 	maxBackupIndex  int                 //
-	maxFileSize     FileLogSize         //
+	maxFileSize     uint64              //
 }
 
 const FILE_LOGGER_FORMAT = "02/Jan/2006:15:04:05"
@@ -76,13 +70,6 @@ func (s oldestLogFirst) Less(i, j int) bool {
 // ////////////////////////////////////////////////////////////////////////////////// //
 
 //
-func (l FileLogSize) Pretty() string {
-	return fmtutil.PrettySize(l)
-}
-
-// ////////////////////////////////////////////////////////////////////////////////// //
-
-//
 func Run() error {
 	return Global.Run()
 }
@@ -97,34 +84,19 @@ func SetMaxBackupIndex(maxBackupIndex int) {
 	Global.SetMaxBackupIndex(maxBackupIndex)
 }
 
-//
-func ParseMaxTimeInterval(maxTimeInterval string) {
-	Global.ParseMaxTimeInterval(maxTimeInterval)
+// SetMaxTimeInterval
+func SetMaxTimeInterval(maxTimeInterval int64) {
+	Global.SetMaxTimeInterval(maxTimeInterval)
 }
 
 //
-//func SetMaxTimeInterval(maxTimeInterval int64) {
-//	Global.SetMaxTimeInterval(maxTimeInterval)
-//}
-
-//
-func ParseMaxFileSize(maxFileSize string) {
-	Global.ParseMaxFileSize(maxFileSize)
+func SetMaxFileSize(maxFileSize uint64) {
+	Global.SetMaxFileSize(maxFileSize)
 }
-
-//
-//func SetMaxFileSize(maxFileSize FileLogSize) {
-//	Global.SetMaxFileSize(maxFileSize)
-//}
 
 //
 func SetTimestampFlag(flag bool) {
 	Global.SetTimestampFlag(flag)
-}
-
-//
-func FormatEntry(entry string) string {
-	return Global.FormatEntry(entry)
 }
 
 //
@@ -165,11 +137,6 @@ func (l *FileLogger) GetMaxBackupIndex() int {
 }
 
 //
-func (l *FileLogger) ParseMaxTimeInterval(maxTimeInterval string) {
-	l.SetMaxTimeInterval(timeutil.ParseDuration(maxTimeInterval))
-}
-
-//
 func (l *FileLogger) SetMaxTimeInterval(maxTimeInterval int64) {
 	l.maxTimeInterval = maxTimeInterval
 }
@@ -180,17 +147,12 @@ func (l *FileLogger) GetMaxTimeInterval() int64 {
 }
 
 //
-func (l *FileLogger) ParseMaxFileSize(maxFileSize string) {
-	l.SetMaxFileSize(FileLogSize(fmtutil.ParseSize(maxFileSize)))
-}
-
-//
-func (l *FileLogger) SetMaxFileSize(maxFileSize FileLogSize) {
+func (l *FileLogger) SetMaxFileSize(maxFileSize uint64) {
 	l.maxFileSize = maxFileSize
 }
 
 //
-func (l *FileLogger) GetMaxFileSize() FileLogSize {
+func (l *FileLogger) GetMaxFileSize() uint64 {
 	return l.maxFileSize
 }
 
@@ -249,6 +211,8 @@ func (l *FileLogger) FormatEntry(entry string) string {
 
 //
 func (l *FileLogger) WriteLog(entry string) error {
+	entry = l.FormatEntry(entry)
+
 	if l.IsMaxFileSizeReached(entry) || l.IsMaxFileAgeReached() {
 		if err := l.RollOver(); err != nil {
 			return err

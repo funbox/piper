@@ -8,6 +8,8 @@ import (
 	"github.com/gongled/piper/logging"
 
 	"pkg.re/essentialkaos/ek.v9/fmtc"
+	"pkg.re/essentialkaos/ek.v9/fmtutil"
+	"pkg.re/essentialkaos/ek.v9/timeutil"
 	"pkg.re/essentialkaos/ek.v9/options"
 	"pkg.re/essentialkaos/ek.v9/signal"
 	"pkg.re/essentialkaos/ek.v9/usage"
@@ -103,6 +105,18 @@ func usr1SignalHandler() {
 
 // ////////////////////////////////////////////////////////////////////////////////// //
 
+// parseMaxTimeInterval parses duration to integer
+func parseMaxTimeInterval(maxTimeInterval string) int64 {
+	return timeutil.ParseDuration(maxTimeInterval)
+}
+
+// parseMaxFileSize parses file size from string to unsigned integer
+func parseMaxFileSize(maxFileSize string) uint64 {
+	return fmtutil.ParseSize(maxFileSize)
+}
+
+// ////////////////////////////////////////////////////////////////////////////////// //
+
 // registerSignalHandlers registers handlers for signals
 func registerSignalHandlers() {
 	signal.Handlers{
@@ -116,8 +130,8 @@ func registerSignalHandlers() {
 func setUpLogger(logFile string) {
 	log.SetOutput(logFile)
 
-	log.ParseMaxTimeInterval(options.GetS(OPT_TIMELIMIT))
-	log.ParseMaxFileSize(options.GetS(OPT_SIZELIMIT))
+	log.SetMaxTimeInterval(parseMaxTimeInterval(options.GetS(OPT_TIMELIMIT)))
+	log.SetMaxFileSize(parseMaxFileSize(options.GetS(OPT_SIZELIMIT)))
 	log.SetMaxBackupIndex(options.GetI(OPT_KEEPFILES))
 	log.SetTimestampFlag(options.GetB(OPT_TIMESTAMP))
 
@@ -133,11 +147,7 @@ func runPiper() error {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
-		entry := log.FormatEntry(scanner.Text())
-
-		fmt.Println(entry)
-
-		if err := log.WriteLog(entry); err != nil {
+		if err := log.WriteLog(scanner.Text()); err != nil {
 			return err
 		}
 	}
