@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"bufio"
 
 	"github.com/gongled/piper/handler"
 )
@@ -17,6 +18,7 @@ import (
 //
 type FileLogger struct {
 	w               handler.FileHandler //
+	r              *os.File           //
 	logOutput       string              //
 	useTimestamp    bool                //
 	maxTimeInterval int64               //
@@ -75,6 +77,11 @@ func Run() error {
 }
 
 //
+func SetInput(rd *os.File) {
+	Global.SetInput(rd)
+}
+
+//
 func SetOutput(logOutput string) {
 	Global.SetOutput(logOutput)
 }
@@ -100,9 +107,9 @@ func SetTimestampFlag(flag bool) {
 }
 
 //
-func WriteLog(entry string) error {
-	return Global.WriteLog(entry)
-}
+//func WriteLog(entry string) error {
+//	return Global.WriteLog(entry)
+//}
 
 //
 func RollOver() error {
@@ -115,6 +122,11 @@ func Close() error {
 }
 
 // ////////////////////////////////////////////////////////////////////////////////// //
+
+//
+func (l *FileLogger) SetInput(rd *os.File) {
+	l.r = rd
+}
 
 //
 func (l *FileLogger) SetOutput(logOutput string) {
@@ -174,7 +186,19 @@ func (l *FileLogger) Run() error {
 		return fmt.Errorf("log output must be set")
 	}
 
-	return l.w.Set(l.logOutput, 0644, l.maxTimeInterval)
+	if err := l.w.Set(l.logOutput, 0644, l.maxTimeInterval); err != nil {
+		return err
+	}
+
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for scanner.Scan() {
+		if err := l.WriteLog(scanner.Text()); err != nil {
+			return err
+		}
+	}
+
+	return scanner.Err()
 }
 
 //

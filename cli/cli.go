@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 
@@ -128,31 +127,18 @@ func registerSignalHandlers() {
 
 // setupPiperOutput sets up logging file parameters
 func setUpLogger(logFile string) {
+	log.SetInput(os.Stdin)
 	log.SetOutput(logFile)
 
 	log.SetMaxTimeInterval(parseMaxTimeInterval(options.GetS(OPT_TIMELIMIT)))
 	log.SetMaxFileSize(parseMaxFileSize(options.GetS(OPT_SIZELIMIT)))
 	log.SetMaxBackupIndex(options.GetI(OPT_KEEPFILES))
 	log.SetTimestampFlag(options.GetB(OPT_TIMESTAMP))
-
-	err := log.Run()
-
-	if err != nil {
-		printErrorMessageAndExit(err.Error())
-	}
 }
 
 // runPiper starts reading stream from stdin and writing to log
 func runPiper() error {
-	scanner := bufio.NewScanner(os.Stdin)
-
-	for scanner.Scan() {
-		if err := log.WriteLog(scanner.Text()); err != nil {
-			return err
-		}
-	}
-
-	return scanner.Err()
+	return log.Run()
 }
 
 // ////////////////////////////////////////////////////////////////////////////////// //
