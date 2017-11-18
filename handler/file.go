@@ -46,7 +46,7 @@ func New(path string, mode os.FileMode) (*FileHandler, error) {
 	return h, nil
 }
 
-// Path
+// Path returns path
 func Path() string {
 	return Global.Path()
 }
