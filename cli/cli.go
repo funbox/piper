@@ -178,10 +178,10 @@ func showUsage() {
 	info.AddOption(OPT_VERSION, "Show information about version")
 	info.AddOption(OPT_HELP, "Show this help message")
 
-	info.AddExample("/var/log/program.log", "Read stdin and write to log")
-	info.AddExample("-t /var/log/program.log", "Read stdin, prepend timestamp and write to log")
-	info.AddExample("-s 5MB -k 10 /var/log/program.log", "Read stdin and rotate log every 5 megabytes and keep 10 files")
-	info.AddExample("-a 10m -k 5 /var/log/program.log", "Read stdin and rotate log every 10 minute and keep 5 files")
+	info.AddExample("/var/log/program.log", "Read stdin and write entries to the logging file")
+	info.AddExample("-t /var/log/program.log", "Prepend timestamp to every entry")
+	info.AddExample("-s 5MB -k 10 /var/log/program.log", "Rotate logging file if it is reached 5M. Keep only 10 files")
+	info.AddExample("-a 10m -k 5 /var/log/program.log", "Rotate logging file every 10 minute. Keep only 5 files")
 
 	info.Render()
 }

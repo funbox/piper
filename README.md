@@ -8,7 +8,7 @@
 
 `piper` solves these problems of logging design:
 
-- It supports log rotation by [POSIX signals](https://en.wikipedia.org/wiki/Signal_(IPC)#POSIX_signals), in contrast to similar tools.
+- It supports log rotation by USR1 [POSIX signal](https://en.wikipedia.org/wiki/Signal_(IPC)#POSIX_signals), in contrast to similar tools.
 - It rotates logs for apps that do not support log rotation out-of-box.
 - It rotates logs for apps that cannot be stopped for some reasons.
 - It rotates logs for apps by given duration.
@@ -45,17 +45,7 @@ Run `piper` to write stdin to `/var/log/program.log` file:
 your_command_here | piper /var/log/program.log
 ```
 
-You can also redirect output to `/dev/null` to suppress any output:
-
-```
-your_command_here | piper /var/log/program.log >/dev/null
-```
-
-Find PID and send USR1 signal to rotate log `/var/log/program.log` (see `signal(3)`):
-
-```
-kill -USR1 $PID
-```
+Any output to stdout will be suppressed.
 
 ## Usage
 
@@ -75,16 +65,16 @@ Options
 Examples
 
   piper /var/log/program.log
-  Read stdin and write to log
+  Read stdin and write entries to the logging file
 
   piper -t /var/log/program.log
-  Read stdin, prepend timestamp and write to log
+  Prepend timestamp to every entry
 
   piper -s 5MB -k 10 /var/log/program.log
-  Read stdin and rotate log every 5 megabytes and keep 10 files
+  Rotate logging file if it is reached 5M. Keep only 10 files
 
   piper -a 10m -k 5 /var/log/program.log
-  Read stdin and rotate log every 10 minute and keep 5 files
+  Rotate logging file every 10 minute. Keep only 5 files
 ```
 
 ## License
