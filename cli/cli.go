@@ -8,9 +8,9 @@ import (
 
 	"pkg.re/essentialkaos/ek.v9/fmtc"
 	"pkg.re/essentialkaos/ek.v9/fmtutil"
-	"pkg.re/essentialkaos/ek.v9/timeutil"
 	"pkg.re/essentialkaos/ek.v9/options"
 	"pkg.re/essentialkaos/ek.v9/signal"
+	"pkg.re/essentialkaos/ek.v9/timeutil"
 	"pkg.re/essentialkaos/ek.v9/usage"
 )
 

@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"bufio"
 
 	"github.com/gongled/piper/handler"
 )
@@ -18,7 +18,7 @@ import (
 // FileLogger main struct for logger
 type FileLogger struct {
 	w               handler.FileHandler //
-	r              *os.File           //
+	r               *os.File            //
 	logOutput       string              //
 	useTimestamp    bool                //
 	maxTimeInterval int64               //
