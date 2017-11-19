@@ -26,7 +26,7 @@ type FileLogger struct {
 	maxFileSize     uint64              //
 }
 
-// Logging time format
+// FILE_LOGGER_FORMAT Logging time format
 const FILE_LOGGER_FORMAT = "02/Jan/2006:15:04:05"
 
 // Sort interface
@@ -250,7 +250,7 @@ func (l *FileLogger) IsMaxFileSizeReached(entry string) bool {
 	return (l.GetMaxFileSize() != 0) && (l.w.Size()+uint64(len(entry)) >= uint64(l.GetMaxFileSize()))
 }
 
-// isMaxFileAgeReached checks if maximum file age is reached
+// IsMaxFileAgeReached checks if maximum file age is reached
 func (l *FileLogger) IsMaxFileAgeReached() bool {
 	return (int64(time.Now().Unix()) > l.w.ExpirationTime()) && (l.w.ExpirationTime() != 0)
 }

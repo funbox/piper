@@ -76,7 +76,7 @@ func Write(p []byte) (n int, err error) {
 	return Global.Write(p)
 }
 
-//
+// Truncate truncates file
 func Truncate() error {
 	return Global.Truncate()
 }
@@ -109,7 +109,7 @@ func (h *FileHandler) Set(path string, perms os.FileMode, duration int64) error 
 	return err
 }
 
-// Path
+// Path returns path
 func (h *FileHandler) Path() string {
 	return h.path
 }
@@ -148,7 +148,7 @@ func (h *FileHandler) Write(p []byte) (int, error) {
 	return n, err
 }
 
-//
+// Truncate truncates file
 func (h *FileHandler) Truncate() error {
 	if h == nil {
 		return ErrFileHandlerIsNil
