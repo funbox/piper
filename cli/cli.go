@@ -19,7 +19,7 @@ import (
 // Application info
 const (
 	APP  = "piper"
-	VER  = "1.0.0"
+	VER  = "1.1.0"
 	DESC = "Utility for log rotation for 12-factor apps"
 )
 
