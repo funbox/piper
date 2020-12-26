@@ -10,6 +10,9 @@
 .DEFAULT_GOAL := help
 .PHONY = fmt vet all clean git-config deps help
 
+VERSION := 1.1.0
+BUMPVERSION_PART ?= patch
+
 ################################################################################
 
 all: piper ## Build all binaries
@@ -29,6 +32,9 @@ git-config: ## Configure git redirects for stable import path services
 deps: git-config ## Download dependencies
 	go get -d -v github.com/gongled/piper
 	go get -d -v pkg.re/essentialkaos/ek.v9
+
+bump:
+	bump2version $(BUMPVERSION_PART)
 
 fmt: ## Format source code with gofmt
 	find . -name "*.go" -exec gofmt -s -w {} \;
