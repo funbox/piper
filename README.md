@@ -16,24 +16,12 @@
 
 ## Installation
 
-### From prebuilt package for RHEL7/CentOS7
-
-```shell
-[sudo] yum install -y http://yum.gongled.me/7/release/x86_64/gongled-release-7.4-0.el7.noarch.rpm
-[sudo] yum install piper
-```
-
 ### From the source code
 
 Install dependencies using a Go package manager:
 
 ```shell
 make deps
-```
-
-Build `piper`:
-
-```shell
 make all
 ```
 
